@@ -32,6 +32,7 @@ export default function OpenMeteoWidget() {
   const [loading, setLoading] = useState(true);
   const [showWater, setShowWater] = useState(false);
   const [humidity, setHumidity] = useState(null);
+  const [lastRefresh, setLastRefresh] = useState(new Date());
 
   useEffect(() => {
     let cancelled = false;
@@ -47,6 +48,7 @@ export default function OpenMeteoWidget() {
           if (!cancelled) {
             setData(json1);
             setHumidity(json2?.current?.relative_humidity_2m ?? null);
+            setLastRefresh(new Date());
           }
         })
         .catch((e) => !cancelled && setError(e))
@@ -91,7 +93,6 @@ export default function OpenMeteoWidget() {
 
     const lat = Number(data?.latitude).toFixed(3);
     const lon = Number(data?.longitude).toFixed(3);
-    const tz = data?.timezone ?? "";
 
     return {
       currentTemp,
@@ -124,7 +125,9 @@ export default function OpenMeteoWidget() {
                     <p className="text-sm text-slate-500">Location</p>
                     <p className="text-slate-800 font-medium">{locationLabel}</p>
                   </div>
-                  <span className="text-xs px-2 py-1 rounded-full bg-slate-900 text-white">LastRefreshTime</span>
+                  <span className="text-xs px-2 py-1 rounded-full bg-slate-900 text-white">
+                    {lastRefresh.toLocaleTimeString()}
+                  </span>
                 </div>
 
                 {showWater ? (
