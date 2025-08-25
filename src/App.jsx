@@ -35,22 +35,30 @@ export default function OpenMeteoWidget() {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    Promise.all([fetch(API_URL), fetch(HUMIDITY_URL)])
-      .then(async ([r1, r2]) => {
-        if (!r1.ok) throw new Error(`HTTP ${r1.status}`);
-        if (!r2.ok) throw new Error(`HTTP ${r2.status}`);
-        const json1 = await r1.json();
-        const json2 = await r2.json();
-        if (!cancelled) {
-          setData(json1);
-          setHumidity(json2?.current?.relative_humidity_2m ?? null);
-        }
-      })
-      .catch((e) => !cancelled && setError(e))
-      .finally(() => !cancelled && setLoading(false));
+
+    const fetchData = () => {
+      setLoading(true);
+      Promise.all([fetch(API_URL), fetch(HUMIDITY_URL)])
+        .then(async ([r1, r2]) => {
+          if (!r1.ok) throw new Error(`HTTP ${r1.status}`);
+          if (!r2.ok) throw new Error(`HTTP ${r2.status}`);
+          const json1 = await r1.json();
+          const json2 = await r2.json();
+          if (!cancelled) {
+            setData(json1);
+            setHumidity(json2?.current?.relative_humidity_2m ?? null);
+          }
+        })
+        .catch((e) => !cancelled && setError(e))
+        .finally(() => !cancelled && setLoading(false));
+    };
+
+    fetchData();
+    const interval = setInterval(fetchData, 10 * 60 * 1000);
+
     return () => {
       cancelled = true;
+      clearInterval(interval);
     };
   }, []);
 
