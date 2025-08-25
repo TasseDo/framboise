@@ -70,7 +70,7 @@ export default function OpenMeteoWidget() {
     <div className="min-h-screen w-full bg-gradient-to-br from-sky-50 to-indigo-100 flex items-center justify-center p-6">
       <div className="w-full max-w-md">
         <div className="relative overflow-hidden rounded-2xl shadow-xl bg-white/70 backdrop-blur-md">
-          <Header />
+          <Header todayCode={todayCode} />
 
           <div className="p-6 grid gap-6">
             {loading && <Skeleton />}
@@ -86,11 +86,10 @@ export default function OpenMeteoWidget() {
                   <span className="text-xs px-2 py-1 rounded-full bg-slate-900 text-white">Open-Meteo</span>
                 </div>
 
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   <Stat label="Current" value={fmtTemp(currentTemp)} big />
                   <Stat label="Max (Today)" value={fmtTemp(todayMax)} />
                   <Stat label="Min (Today)" value={fmtTemp(todayMin)} />
-                  <Stat label="Weather" value={weatherCodeToEmoji(todayCode)} />
                 </div>
               </div>
             )}
@@ -102,13 +101,13 @@ export default function OpenMeteoWidget() {
   );
 }
 
-function Header() {
+function Header({ todayCode }) {
   return (
     <div className="px-6 pt-6 pb-4 border-b border-slate-200/70 bg-gradient-to-r from-indigo-600/10 to-sky-500/10">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-2xl bg-indigo-600/90 text-white grid place-content-center shadow">
-            <span className="text-lg font-bold">°C</span>
+            <span className="text-lg font-bold">{weatherCodeToEmoji(todayCode)}</span>
           </div>
           <div className="leading-tight">
             <h1 className="text-xl font-semibold text-slate-900">Weather</h1>
