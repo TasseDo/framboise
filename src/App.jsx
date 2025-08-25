@@ -105,7 +105,7 @@ export default function OpenMeteoWidget() {
   }, [data]);
 
   return (
-    <div className={`min-h-screen w-full bg-gradient-to-br ${showWater ? "from-sky-900 to-indigo-950" : "from-amber-700 to-yellow-500"} flex items-center justify-center p-6`}>
+    <div className={`min-h-screen w-full bg-gradient-to-br ${showWater ? "from-sky-900 to-indigo-950" : "from-amber-700 to-yellow-500"} flex items-center justify-center p-0 m-0`}>
       <div className="w-full max-w-md">
         <div className="relative overflow-hidden rounded-2xl shadow-xl bg-white/70 backdrop-blur-md">
           <Header
