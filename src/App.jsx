@@ -7,7 +7,7 @@ const API_URL = (() => {
     latitude: String(latitude),
     longitude: String(longitude),
     current: "temperature_2m",
-    daily: "temperature_2m_max,temperature_2m_min",
+    daily: "temperature_2m_max,temperature_2m_min,weather_code",
     timezone: "auto",
   });
   return `https://api.open-meteo.com/v1/forecast?${params.toString()}`;
@@ -36,14 +36,22 @@ export default function OpenMeteoWidget() {
     };
   }, []);
 
-  const { currentTemp, todayMax, todayMin, locationLabel } = useMemo(() => {
-    if (!data) return { currentTemp: null, todayMax: null, todayMin: null, locationLabel: "" };
+  const { currentTemp, todayMax, todayMin, todayCode, locationLabel } = useMemo(() => {
+    if (!data)
+      return {
+        currentTemp: null,
+        todayMax: null,
+        todayMin: null,
+        todayCode: null,
+        locationLabel: "",
+      };
 
     const currentTemp = data?.current?.temperature_2m ?? null;
 
     const idx = 0;
     const todayMax = data?.daily?.temperature_2m_max?.[idx] ?? null;
     const todayMin = data?.daily?.temperature_2m_min?.[idx] ?? null;
+    const todayCode = data?.daily?.weather_code?.[idx] ?? null;
 
     const lat = Number(data?.latitude).toFixed(3);
     const lon = Number(data?.longitude).toFixed(3);
@@ -53,6 +61,7 @@ export default function OpenMeteoWidget() {
       currentTemp,
       todayMax,
       todayMin,
+      todayCode,
       locationLabel: `Lat ${lat}, Lon ${lon} • ${tz}`,
     };
   }, [data]);
@@ -77,10 +86,11 @@ export default function OpenMeteoWidget() {
                   <span className="text-xs px-2 py-1 rounded-full bg-slate-900 text-white">Open-Meteo</span>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-4 gap-3">
                   <Stat label="Current" value={fmtTemp(currentTemp)} big />
                   <Stat label="Max (Today)" value={fmtTemp(todayMax)} />
                   <Stat label="Min (Today)" value={fmtTemp(todayMin)} />
+                  <Stat label="Weather" value={weatherCodeToEmoji(todayCode)} />
                 </div>
               </div>
             )}
@@ -176,4 +186,15 @@ function fmtTemp(n) {
   if (n === null || n === undefined || Number.isNaN(n)) return "—";
   const rounded = Math.round(n);
   return `${rounded}°C`;
+}
+
+function weatherCodeToEmoji(code) {
+  if (code === null || code === undefined) return "—";
+
+  const rainyCodes = [
+    51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99,
+  ];
+  if (rainyCodes.includes(code)) return "🌧️";
+  if (code === 0) return "☀️";
+  return "☁️";
 }
