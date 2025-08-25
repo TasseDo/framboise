@@ -99,12 +99,12 @@ export default function OpenMeteoWidget() {
       todayMin,
       todayCode,
       todayPrecip,
-      locationLabel: `Lat ${lat}, Lon ${lon} • ${tz}`,
+      locationLabel: `Lat ${lat}, Lon ${lon} • Mirabel`,
     };
   }, [data]);
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-sky-50 to-indigo-100 flex items-center justify-center p-6">
+    <div className={`min-h-screen w-full bg-gradient-to-br ${showWater ? "from-sky-900 to-indigo-950" : "from-amber-700 to-yellow-500"} flex items-center justify-center p-6`}>
       <div className="w-full max-w-md">
         <div className="relative overflow-hidden rounded-2xl shadow-xl bg-white/70 backdrop-blur-md">
           <Header
@@ -113,7 +113,7 @@ export default function OpenMeteoWidget() {
             showWater={showWater}
           />
 
-          <div className="p-6 grid gap-6">
+          <div className={`p-6 grid gap-6 bg-gradient-to-br ${showWater ? "from-sky-900/20 to-indigo-950/40" : "from-amber-900/20 to-yellow-900/40"}`}>
             {loading && <Skeleton />}
             {!loading && error && <ErrorCard error={error} />}
 
@@ -124,7 +124,7 @@ export default function OpenMeteoWidget() {
                     <p className="text-sm text-slate-500">Location</p>
                     <p className="text-slate-800 font-medium">{locationLabel}</p>
                   </div>
-                  <span className="text-xs px-2 py-1 rounded-full bg-slate-900 text-white">Open-Meteo</span>
+                  <span className="text-xs px-2 py-1 rounded-full bg-slate-900 text-white">LastRefreshTime</span>
                 </div>
 
                 {showWater ? (
@@ -159,8 +159,8 @@ export default function OpenMeteoWidget() {
 
 function Header({ todayCode, onToggle, showWater }) {
   const bgClass = showWater
-    ? "bg-gradient-to-r from-green-500/10 to-teal-500/10"
-    : "bg-gradient-to-r from-indigo-600/10 to-sky-500/10";
+    ? "bg-gradient-to-r from-indigo-900/20 to-sky-800/40"
+    : "bg-gradient-to-r from-amber-900/20 to-yellow-900/40";
   return (
     <div className={`px-6 pt-6 pb-4 border-b border-slate-200/70 ${bgClass}`}>
       <div className="flex items-center justify-between">
@@ -186,7 +186,7 @@ function Header({ todayCode, onToggle, showWater }) {
 
 function Stat({ label, value, big = false }) {
   return (
-    <div className={`rounded-xl border border-slate-200 bg-white/70 p-4 text-center shadow-sm ${big ? "row-span-1" : ""}`}>
+    <div className={`rounded-xl border border-slate-200 bg-white/50 p-4 text-center shadow-sm ${big ? "row-span-1" : ""}`}>
       <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
       <p className={`font-semibold text-slate-900 ${big ? "text-3xl" : "text-2xl"}`}>{value ?? "—"}</p>
     </div>
