@@ -13,21 +13,38 @@ const API_URL = (() => {
   return `https://api.open-meteo.com/v1/forecast?${params.toString()}`;
 })();
 
+const HUMIDITY_URL = (() => {
+  const latitude = 45.650002;
+  const longitude = -74.083336;
+  const params = new URLSearchParams({
+    latitude: String(latitude),
+    longitude: String(longitude),
+    current: "relative_humidity_2m",
+    timezone: "auto",
+  });
+  return `https://api.open-meteo.com/v1/forecast?${params.toString()}`;
+})();
+
 export default function OpenMeteoWidget() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showWater, setShowWater] = useState(false);
+  const [humidity, setHumidity] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    fetch(API_URL)
-      .then(async (r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then((json) => {
-        if (!cancelled) setData(json);
+    Promise.all([fetch(API_URL), fetch(HUMIDITY_URL)])
+      .then(async ([r1, r2]) => {
+        if (!r1.ok) throw new Error(`HTTP ${r1.status}`);
+        if (!r2.ok) throw new Error(`HTTP ${r2.status}`);
+        const json1 = await r1.json();
+        const json2 = await r2.json();
+        if (!cancelled) {
+          setData(json1);
+          setHumidity(json2?.current?.relative_humidity_2m ?? null);
+        }
       })
       .catch((e) => !cancelled && setError(e))
       .finally(() => !cancelled && setLoading(false));
@@ -70,7 +87,11 @@ export default function OpenMeteoWidget() {
     <div className="min-h-screen w-full bg-gradient-to-br from-sky-50 to-indigo-100 flex items-center justify-center p-6">
       <div className="w-full max-w-md">
         <div className="relative overflow-hidden rounded-2xl shadow-xl bg-white/70 backdrop-blur-md">
-          <Header todayCode={todayCode} />
+          <Header
+            todayCode={todayCode}
+            onToggle={() => setShowWater((p) => !p)}
+            showWater={showWater}
+          />
 
           <div className="p-6 grid gap-6">
             {loading && <Skeleton />}
@@ -86,11 +107,22 @@ export default function OpenMeteoWidget() {
                   <span className="text-xs px-2 py-1 rounded-full bg-slate-900 text-white">Open-Meteo</span>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
-                  <Stat label="Current" value={fmtTemp(currentTemp)} big />
-                  <Stat label="Max (Today)" value={fmtTemp(todayMax)} />
-                  <Stat label="Min (Today)" value={fmtTemp(todayMin)} />
-                </div>
+                {showWater ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    <Stat
+                      label="Humidex"
+                      value={calcHumidex(currentTemp, humidity)}
+                      big
+                    />
+                    <Stat label="Snow Chance" value={calcSnowChance(todayCode)} />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 gap-3">
+                    <Stat label="Current" value={fmtTemp(currentTemp)} big />
+                    <Stat label="Max (Today)" value={fmtTemp(todayMax)} />
+                    <Stat label="Min (Today)" value={fmtTemp(todayMin)} />
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -101,17 +133,25 @@ export default function OpenMeteoWidget() {
   );
 }
 
-function Header({ todayCode }) {
+function Header({ todayCode, onToggle, showWater }) {
+  const bgClass = showWater
+    ? "bg-gradient-to-r from-green-500/10 to-teal-500/10"
+    : "bg-gradient-to-r from-indigo-600/10 to-sky-500/10";
   return (
-    <div className="px-6 pt-6 pb-4 border-b border-slate-200/70 bg-gradient-to-r from-indigo-600/10 to-sky-500/10">
+    <div className={`px-6 pt-6 pb-4 border-b border-slate-200/70 ${bgClass}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-2xl bg-indigo-600/90 text-white grid place-content-center shadow">
+          <div
+            className="h-10 w-10 rounded-2xl bg-indigo-600/90 text-white grid place-content-center shadow cursor-pointer"
+            onClick={onToggle}
+          >
             <span className="text-lg font-bold">{weatherCodeToEmoji(todayCode)}</span>
           </div>
           <div className="leading-tight">
             <h1 className="text-xl font-semibold text-slate-900">Weather</h1>
-            <p className="text-slate-600 text-sm">Current, today’s max & min</p>
+            <p className="text-slate-600 text-sm">
+              {showWater ? "Today's water" : "Current, today’s max & min"}
+            </p>
           </div>
         </div>
         <Refresh onClick={() => window.location.reload()} small />
@@ -196,4 +236,29 @@ function weatherCodeToEmoji(code) {
   if (rainyCodes.includes(code)) return "🌧️";
   if (code === 0) return "☀️";
   return "☁️";
+}
+
+function calcHumidex(temp, humidity) {
+  if (
+    temp === null ||
+    temp === undefined ||
+    Number.isNaN(temp) ||
+    humidity === null ||
+    humidity === undefined ||
+    Number.isNaN(humidity)
+  )
+    return "—";
+  const a = 17.27;
+  const b = 237.7;
+  const alpha = (a * temp) / (b + temp) + Math.log(humidity / 100);
+  const dewPoint = (b * alpha) / (a - alpha);
+  const e = 6.11 * Math.exp(5417.7530 * (1 / 273.16 - 1 / (273.15 + dewPoint)));
+  const h = temp + 0.5555 * (e - 10);
+  return fmtTemp(h);
+}
+
+function calcSnowChance(code) {
+  if (code === null || code === undefined) return "—";
+  const snowCodes = [71, 73, 75, 77, 85, 86];
+  return snowCodes.includes(code) ? "100%" : "0%";
 }
