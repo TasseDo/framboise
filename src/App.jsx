@@ -7,7 +7,8 @@ const API_URL = (() => {
     latitude: String(latitude),
     longitude: String(longitude),
     current: "temperature_2m",
-    daily: "temperature_2m_max,temperature_2m_min,weather_code",
+    daily:
+      "temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max",
     timezone: "auto",
   });
   return `https://api.open-meteo.com/v1/forecast?${params.toString()}`;
@@ -53,13 +54,21 @@ export default function OpenMeteoWidget() {
     };
   }, []);
 
-  const { currentTemp, todayMax, todayMin, todayCode, locationLabel } = useMemo(() => {
+  const {
+    currentTemp,
+    todayMax,
+    todayMin,
+    todayCode,
+    todayPrecip,
+    locationLabel,
+  } = useMemo(() => {
     if (!data)
       return {
         currentTemp: null,
         todayMax: null,
         todayMin: null,
         todayCode: null,
+        todayPrecip: null,
         locationLabel: "",
       };
 
@@ -69,6 +78,8 @@ export default function OpenMeteoWidget() {
     const todayMax = data?.daily?.temperature_2m_max?.[idx] ?? null;
     const todayMin = data?.daily?.temperature_2m_min?.[idx] ?? null;
     const todayCode = data?.daily?.weather_code?.[idx] ?? null;
+    const todayPrecip =
+      data?.daily?.precipitation_probability_max?.[idx] ?? null;
 
     const lat = Number(data?.latitude).toFixed(3);
     const lon = Number(data?.longitude).toFixed(3);
@@ -79,6 +90,7 @@ export default function OpenMeteoWidget() {
       todayMax,
       todayMin,
       todayCode,
+      todayPrecip,
       locationLabel: `Lat ${lat}, Lon ${lon} • ${tz}`,
     };
   }, [data]);
@@ -108,11 +120,15 @@ export default function OpenMeteoWidget() {
                 </div>
 
                 {showWater ? (
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     <Stat
                       label="Humidex"
                       value={calcHumidex(currentTemp, humidity)}
                       big
+                    />
+                    <Stat
+                      label="Precip Chance"
+                      value={fmtPercent(todayPrecip)}
                     />
                     <Stat label="Snow Chance" value={calcSnowChance(todayCode)} />
                   </div>
@@ -225,6 +241,11 @@ function fmtTemp(n) {
   if (n === null || n === undefined || Number.isNaN(n)) return "—";
   const rounded = Math.round(n);
   return `${rounded}°C`;
+}
+
+function fmtPercent(n) {
+  if (n === null || n === undefined || Number.isNaN(n)) return "—";
+  return `${Math.round(n)}%`;
 }
 
 function weatherCodeToEmoji(code) {
