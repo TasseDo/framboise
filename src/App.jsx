@@ -154,7 +154,6 @@ export default function OpenMeteoWidget() {
             )}
           </div>
         </div>
-        <FooterNote />
       </div>
     </div>
   );
@@ -240,13 +239,6 @@ function Refresh({ onClick, small = false }) {
   );
 }
 
-function FooterNote() {
-  return (
-    <p className="text-center text-xs text-slate-500 mt-4">
-      Data source: <a className="underline" href="https://open-meteo.com/" target="_blank" rel="noreferrer">Open-Meteo</a>
-    </p>
-  );
-}
 
 function fmtTemp(n) {
   if (n === null || n === undefined || Number.isNaN(n)) return "—";
